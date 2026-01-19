@@ -154,6 +154,13 @@ airflow webserver --port 8080
 http://localhost:8080
 ```
 
+Se recomiendo configurar el proyecto sin proyectos de ejemplo para que no haya conflictos con los DAGs del proyecto.
+en airflow.cfg se recomienda configurar: 
+
+```
+include_examples = False
+```
+
 El DAG `pipeline_avanzado_complejo` debería aparecer automáticamente, cargando desde `dag_complejo/dags/pipeline_complejo.py`.
 
 ---
