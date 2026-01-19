@@ -50,7 +50,7 @@ with DAG(
     # -----------------------------
     # Tareas externas
     # -----------------------------
-    inicio = DummyOperator(task_id='inicio', dag=dag)
+    inicio = EmptyOperator(task_id='inicio', dag=dag)
     validar = PythonOperator(
         task_id='validar_calidad',
         python_callable=validar_calidad_datos,
