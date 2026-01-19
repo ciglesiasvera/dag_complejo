@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator, BranchPythonOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator 
 from airflow.utils.task_group import TaskGroup
 from datetime import datetime, timedelta
 import random
@@ -37,7 +37,7 @@ def procesamiento_completo():
 with DAG(
     dag_id='pipeline_avanzado_complejo',
     description='Pipeline con patrones avanzados: branching, TaskGroup y XCom',
-    schedule_interval='@daily',
+    schedule='@daily',  # CORRECCIÓN: 'schedule' en lugar de 'schedule_interval' (Airflow 2.4+)
     start_date=datetime(2024, 1, 1),
     catchup=False,
     default_args={
@@ -50,17 +50,19 @@ with DAG(
     # -----------------------------
     # Tareas externas
     # -----------------------------
+    # CORRECCIÓN: Usamos EmptyOperator
     inicio = EmptyOperator(task_id='inicio', dag=dag)
+    
     validar = PythonOperator(
         task_id='validar_calidad',
         python_callable=validar_calidad_datos,
-        provide_context=True,
+        # provide_context=True,  <-- Eliminado porque ya no es necesario en Airflow 2.0+
         dag=dag
     )
     decidir = BranchPythonOperator(
         task_id='decidir_ruta',
         python_callable=decidir_procesamiento,
-        provide_context=True,
+        # provide_context=True,  <-- Eliminado
         dag=dag
     )
     ruta_rapida = PythonOperator(
@@ -86,16 +88,19 @@ with DAG(
         paso1 >> paso2 >> paso3
 
     # -----------------------------
-    # Unión y finalización (AHORA FUERA DEL TASKGROUP)
+    # Unión y finalización
     # -----------------------------
-    union = DummyOperator(task_id='union_rutas', dag=dag, trigger_rule='one_success') 
-    # Nota: Agregué trigger_rule='one_success' a 'union' porque viene de un Branching. 
-    # Si no, esperará a que todas las ramas anteriores tengan éxito (y algunas se saltarán).
+    # CORRECCIÓN: Usamos EmptyOperator
+    union = EmptyOperator(
+        task_id='union_rutas', 
+        dag=dag, 
+        trigger_rule='one_success' # Importante para branching
+    )
     
-    fin = DummyOperator(task_id='fin', dag=dag)
+    fin = EmptyOperator(task_id='fin', dag=dag)
 
     # -----------------------------
-    # Flujo principal (AHORA FUERA DEL TASKGROUP)
+    # Flujo principal
     # -----------------------------
     inicio >> validar >> decidir
     
