@@ -1,0 +1,35 @@
+# .github/workflows/test-dags.yml
+name: Test Airflow DAGs
+
+on:
+  push:
+    paths:
+      - 'dags/**'
+
+jobs:
+  test-dags:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    
+    - name: Install dependencies
+      run: pip install apache-airflow pytest
+    
+    - name: Test DAGs
+      run: python -m pytest tests/dags/ -v
+    
+    - name: Validate DAG syntax
+      run: python -c "
+      from airflow.models import DagBag
+      dagbag = DagBag()
+      if dagbag.import_errors:
+          print('DAG import errors:', dagbag.import_errors)
+          exit(1)
+      print('All DAGs loaded successfully')
+      "

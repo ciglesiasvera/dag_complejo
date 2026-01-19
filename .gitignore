@@ -1,0 +1,17 @@
+# Entorno virtual
+myenv/
+venv/
+.env
+
+# Airflow
+airflow.db
+airflow.cfg
+logs/
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
+.idea/
+.vscode/
+
