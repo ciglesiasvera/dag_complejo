@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'dags/**'
+      - 'tests/**'  # Agregué esto: corre tests si modificas los tests también
 
 jobs:
   test-dags:
@@ -16,20 +17,37 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.10' # Actualizado a 3.10 para coincidir con tu entorno local
     
     - name: Install dependencies
-      run: pip install apache-airflow pytest
-    
+      run: |
+        pip install apache-airflow pytest
+        # Inicializar DB básica para que no fallen los imports de Airflow
+        export AIRFLOW_HOME=$(pwd)
+        airflow db migrate 
+
     - name: Test DAGs
-      run: python -m pytest tests/dags/ -v
+      env:
+        AIRFLOW_HOME: ${{ github.workspace }} # Importante para que encuentre dags/
+      run: python -m pytest tests/ -v  # CORREGIDO: la ruta es tests/, no tests/dags/
     
     - name: Validate DAG syntax
-      run: python -c "
-      from airflow.models import DagBag
-      dagbag = DagBag()
-      if dagbag.import_errors:
-          print('DAG import errors:', dagbag.import_errors)
-          exit(1)
-      print('All DAGs loaded successfully')
-      "
+      env:
+        AIRFLOW_HOME: ${{ github.workspace }}
+      run: |
+        python -c "
+        import os
+        from airflow.models import DagBag
+        
+        # Le decimos explícitamente dónde buscar los DAGs (carpeta actual + /dags)
+        dag_folder = os.path.join(os.getcwd(), 'dags')
+        print(f'Buscando DAGs en: {dag_folder}')
+        
+        dagbag = DagBag(dag_folder=dag_folder, include_examples=False)
+        
+        if dagbag.import_errors:
+            print('ERRORES DE IMPORTACIÓN EN DAGs:', dagbag.import_errors)
+            exit(1)
+        
+        print(f'Se cargaron exitosamente {len(dagbag.dags)} DAGs.')
+        "
